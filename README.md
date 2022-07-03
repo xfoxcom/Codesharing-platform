@@ -1,2 +1,2 @@
 # Codesharing-platform
-Users can share their code(message) und update it.
+Users can share their code(message) and update it. Get list of posted codes. 
