@@ -1,6 +1,7 @@
 package platform;
 
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -10,27 +11,34 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.stereotype.Controller;
 import javax.servlet.http.HttpServletResponse;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
-
+import java.util.stream.Collectors;
 
 
 @Controller
 public class ControllerOfCode {
     private List<Code> codes = new ArrayList<>();
-    private final String code = "public static void main(String[] args) {SpringApplication.run(CodeSharingPlatform.class, args);}";
-    private static Code snippet= new Code(1,"public static void main(String[] args) {SpringApplication.run(CodeSharingPlatform.class, args);}", LocalDateTime.now().withNano(0));
+    private static final String DATE_FORMATTER= "yyyy-MM-dd HH:mm:ss";
 
+    @Autowired
+    CodeRepository repository;
+    public ControllerOfCode(CodeRepository codeRepository) {
+        this.repository = codeRepository;
+    }
     @GetMapping(value = "/code/{N}", produces = MediaType.TEXT_HTML_VALUE)
     public String getCode(HttpServletResponse response, @PathVariable int N, Model model) {
         response.addHeader("Content-Type", "text/html");
 
-        for (Code code1 : codes) {
+       /* for (Code code1 : codes) {
             if (code1.getId() == N) {
                 snippet.setCode(code1.getCode());
                 snippet.setDate(code1.getDate());
             }
-        }
-        model.addAttribute("code", snippet);
+        }*/
+
+       // model.addAttribute("date", repository.findById(N).get().getDate().format(DateTimeFormatter.ofPattern(DATE_FORMATTER)));
+        model.addAttribute("code", repository.findById(N).get());
         return "getSnippet";
     }
 
@@ -38,10 +46,13 @@ public class ControllerOfCode {
     @ResponseBody
     public Code getField(HttpServletResponse response, @PathVariable int N) {
         response.addHeader("Content-Type", "application/json");
-        for (Code code1 : codes) {
+      /*  for (Code code1 : codes) {
             if (code1.getId() == N) {
                 return code1;
             }
+        }*/
+        if (repository.existsById(N)) {
+            return repository.findById(N).get();
         }
         throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     }
@@ -49,16 +60,10 @@ public class ControllerOfCode {
     @PostMapping("/api/code/new")
     @ResponseBody
     public ResponseEntity<Map<String, String>> postNewCode(@RequestBody Code code) {
-        int id;
-        code.setDate(LocalDateTime.now().withNano(0));
-        if (codes.isEmpty()) {
-            id = 1;
-        } else {
-            id = codes.size() + 1;
-        }
-        code.setId(id);
-        codes.add(code);
-        return ResponseEntity.ok(Map.of("id", String.valueOf(id)));
+
+        code.setDate(LocalDateTime.now());
+        repository.save(code);
+        return ResponseEntity.ok(Map.of("id", String.valueOf(code.getId())));
     }
 
     @GetMapping("/code/new")
@@ -70,7 +75,8 @@ public class ControllerOfCode {
     @ResponseBody
     public List<Code> getLatest() {
         List<Code> latest = new ArrayList<>();
-        if (codes.size() <=10) {
+
+      /*  if (codes.size() <=10) {
             for (int i = codes.size() - 1; i >= 0; i--) {
                 latest.add(codes.get(i));
             }
@@ -79,12 +85,13 @@ public class ControllerOfCode {
                 latest.add(codes.get(i));
             }
         }
-        return latest;
+        return latest;*/
+       return repository.findAll().stream().sorted(Comparator.comparing(Code::getDate).reversed()).limit(10).collect(Collectors.toList());
     }
     @GetMapping("/code/latest")
     public String getLatestHTML (Model model) {
         List<Code> latest = new ArrayList<>();
-        if (codes.size() <=10) {
+      /*  if (codes.size() <=10) {
             for (int i = codes.size() - 1; i >= 0; i--) {
                 latest.add(codes.get(i));
             }
@@ -92,8 +99,9 @@ public class ControllerOfCode {
             for (int i = codes.size() - 1; i >= codes.size() - 10; i--) {
                 latest.add(codes.get(i));
             }
-        }
-        model.addAttribute("codes", latest);
+        }*/
+        //model.addAttribute("date", repository.findAll().stream().sorted(Comparator.comparing(Code::getDate).reversed()).limit(10).map(Code::getDate).map(d -> d.format(DateTimeFormatter.ofPattern(DATE_FORMATTER))).collect(Collectors.toList()));
+        model.addAttribute("codes", repository.findAll().stream().sorted(Comparator.comparing(Code::getDate).reversed()).limit(10).collect(Collectors.toList()));
         return "latest";
     }
 }
