@@ -1,9 +1,6 @@
 package platform;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -26,12 +23,9 @@ public class Code {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private int id;
     private String code;
-    private LocalDateTime date;
+    private String date;
 
-    @JsonSerialize(using = LocalDateTimeSerializer.class)
-    @JsonFormat(pattern = "yyyy/MM/dd HH:mm:ss")
-    @JsonProperty("date")
-    public LocalDateTime getDate() {
-        return date;
+    public void setDate(LocalDateTime time) {
+        this.date = time.format(DateTimeFormatter.ofPattern(DATE_FORMATTER));
     }
 }
