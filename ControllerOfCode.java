@@ -11,6 +11,8 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.stereotype.Controller;
 import javax.servlet.http.HttpServletResponse;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -26,20 +28,46 @@ public class ControllerOfCode {
         this.repository = codeRepository;
     }
     @GetMapping(value = "/code/{N}", produces = MediaType.TEXT_HTML_VALUE)
-    public String getCode(HttpServletResponse response, @PathVariable int N, Model model) {
+    public String getCode(HttpServletResponse response, @PathVariable String N, Model model) {
         response.addHeader("Content-Type", "text/html");
-
+        if (!repository.existsById(N)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        Code code = repository.findById(N).get();
+        if (code.isSecret()) {
+            if (code.getViews() == 0 | code.isExpired()) {
+                repository.deleteById(N);
+            }
+        }
         model.addAttribute("code", repository.findById(N).get());
+        if (code.isSecret()) {
+            code.setViews(code.getViews() - 1);
+            repository.save(code);
+        }
         return "getSnippet";
     }
 
     @GetMapping(value = "/api/code/{N}", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
-    public Code getField(HttpServletResponse response, @PathVariable int N) {
+    public Code getField(HttpServletResponse response, @PathVariable String N) {
         response.addHeader("Content-Type", "application/json");
-
         if (repository.existsById(N)) {
-            return repository.findById(N).get();
+            Code code = repository.findById(N).get();
+            LocalTime time = LocalTime.parse(code.getDate().split("\\s+")[1]);
+            int sec = LocalTime.now().minus(time.toSecondOfDay(), ChronoUnit.SECONDS).getSecond(); // прошло секунд
+
+            if (code.isSecret()) {
+                code.setViews(code.getViews() - 1);
+                code.setTime(code.getTime() - sec);
+                repository.save(code);
+
+                if (code.getViews() == 0 | code.isExpired()) {
+                    repository.deleteById(N);
+                }
+            }
+            if (repository.existsById(N)) {
+                return repository.findById(N).get();
+            }
         }
         throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     }
@@ -53,9 +81,17 @@ public class ControllerOfCode {
             Thread.sleep(1000);
         } catch (Exception e) {
         }
+
+        code.setId();
         code.setDate(LocalDateTime.now());
+        code.setExpired(false);
+        if (code.getTime() <= 0 & code.getViews() <=0) {
+            code.setSecret(false);
+        } else {
+            code.setSecret(true);
+        }
         repository.save(code);
-        return ResponseEntity.ok(Map.of("id", String.valueOf(code.getId())));
+        return ResponseEntity.ok(Map.of("id", code.getId()));
     }
 
     @GetMapping("/code/new")
