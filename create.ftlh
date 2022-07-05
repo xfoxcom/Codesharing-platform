@@ -14,6 +14,8 @@
   background-color: #f8f8f8;
   font-size: 16px; width:500px; height:200px;" id="code_snippet"> //write your code here </textarea>
 <br>
+<p>Time restriction: </p><input id="time_restriction" type="text"/><br>
+<p>Views restriction: </p><input id="views_restriction" type="text"/><br><br>
 <button style="
   width: 80px;
   height: 50px;
@@ -26,7 +28,9 @@
 <script>
     function send() {
     let object = {
-        "code": document.getElementById("code_snippet").value
+        "code": document.getElementById("code_snippet").value,
+        "time": document.getElementById("time_restriction").value,
+        "views": document.getElementById("views_restriction").value
     };
 
     let json = JSON.stringify(object);
