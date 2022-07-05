@@ -36,6 +36,12 @@ public class Code {
     private boolean isExpired;
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private LocalTime timeOfExpire;
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private boolean onlyTimeRest;
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private boolean onlyViewsRest;
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private boolean allRest;
 
     public void setDate(LocalDateTime time) {
         this.date = time.format(DateTimeFormatter.ofPattern(DATE_FORMATTER));

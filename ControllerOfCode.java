@@ -12,7 +12,6 @@ import org.springframework.stereotype.Controller;
 import javax.servlet.http.HttpServletResponse;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -34,14 +33,14 @@ public class ControllerOfCode {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
         Code code = repository.findById(N).get();
-        LocalTime time = LocalTime.parse(code.getDate().split("\\s+")[1]);
 
         if (code.isSecret()) {
             long timeToExp = code.getTimeOfExpire().toSecondOfDay() - LocalTime.now().toSecondOfDay();
-            code.setViews(code.getViews() - 1);
-            code.setTime(timeToExp);
+            if (code.getViews() > 0) code.setViews(code.getViews() - 1);
+            if (code.getTime() > 0) code.setTime(timeToExp);
             repository.save(code);
-            if (code.getViews() < 1 | code.isExpired()) {
+
+            if (((code.getViews() < 1 | code.isExpired()) & code.isAllRest()) | (code.isOnlyTimeRest() & code.isExpired()) | (code.isOnlyViewsRest() & code.getViews() < 1)) {
                 repository.deleteById(N);
             }
 
@@ -50,7 +49,10 @@ public class ControllerOfCode {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
         model.addAttribute("code", repository.findById(N).get());
-        return "getSnippet";
+        if (code.isAllRest()) return "getSnippet";
+        if (code.isOnlyViewsRest()) return "getSnippetWithViewsRestrict";
+        if (code.isOnlyTimeRest()) return "getSnippetWithTimeRestriction";
+        return "getSnippetWithoutRestrict";
     }
 
     @GetMapping(value = "/api/code/{N}", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -63,10 +65,10 @@ public class ControllerOfCode {
 
             if (code.isSecret()) {
                 long timeToExp = code.getTimeOfExpire().toSecondOfDay() - LocalTime.now().toSecondOfDay();
-                code.setViews(code.getViews() - 1);
-                code.setTime(timeToExp);
+                if (code.getViews() > 0) code.setViews(code.getViews() - 1);
+                if (code.getTime() > 0) code.setTime(timeToExp);
                 repository.save(code);
-                if (code.getViews() < 1 | code.isExpired()) {
+                if ((code.getViews() < 1 & code.isExpired() & code.isAllRest()) | (code.isOnlyTimeRest() & code.isExpired()) | (code.isOnlyViewsRest() & code.getViews() < 1)) {
                     repository.deleteById(N);
                 }
             }
@@ -96,6 +98,9 @@ public class ControllerOfCode {
             String[] t = code.getDate().split("\\s+");
             code.setSecret(true);
             code.setTimeOfExpire(LocalTime.parse(t[1]).plusSeconds(code.getTime()));
+            if (code.getViews() > 0 & code.getTime() > 0) code.setAllRest(true);
+            if (code.getTime() == 0 & code.getViews() > 0) code.setOnlyViewsRest(true);
+            if (code.getViews() == 0 & code.getTime() > 0) code.setOnlyTimeRest(true);
         }
         repository.save(code);
         return ResponseEntity.ok(Map.of("id", code.getId()));
