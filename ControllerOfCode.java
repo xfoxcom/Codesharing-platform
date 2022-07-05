@@ -35,12 +35,27 @@ public class ControllerOfCode {
         Code code = repository.findById(N).get();
 
         if (code.isSecret()) {
-            long timeToExp = code.getTimeOfExpire().toSecondOfDay() - LocalTime.now().toSecondOfDay();
-            if (code.getViews() > 0) code.setViews(code.getViews() - 1);
-            if (code.getTime() > 0) code.setTime(timeToExp);
+            long timeToExp = code.getTimeOfExpire().toSecondOfDay() - LocalTime.now().withNano(0).toSecondOfDay();
+          /*  if (code.getViews() > 0)
+                code.setViews(code.getViews() - 1);
+            if (code.getTime() > 0)
+                code.setTime(timeToExp);
+            */
+
+            if (code.isAllRest()) {
+                code.setViews(code.getViews() - 1);
+                code.setTime(timeToExp);
+            }
+            if (code.isOnlyViewsRest()) {
+                code.setViews(code.getViews() - 1);
+            }
+            if (code.isOnlyTimeRest()) {
+                code.setTime(timeToExp);
+            }
+
             repository.save(code);
 
-            if (((code.getViews() < 1 | code.isExpired()) & code.isAllRest()) | (code.isOnlyTimeRest() & code.isExpired()) | (code.isOnlyViewsRest() & code.getViews() < 1)) {
+            if (((code.getViews() < 0 | code.isExpired()) & code.isAllRest()) | (code.isOnlyTimeRest() & code.isExpired()) | (code.isOnlyViewsRest() & code.getViews() < 0)) {
                 repository.deleteById(N);
             }
 
@@ -64,7 +79,7 @@ public class ControllerOfCode {
             LocalTime time = LocalTime.parse(code.getDate().split("\\s+")[1]); // time of creation
 
             if (code.isSecret()) {
-                long timeToExp = code.getTimeOfExpire().toSecondOfDay() - LocalTime.now().toSecondOfDay();
+                long timeToExp = code.getTimeOfExpire().toSecondOfDay() - LocalTime.now().withNano(0).toSecondOfDay();
                 if (code.getViews() > 0) code.setViews(code.getViews() - 1);
                 if (code.getTime() > 0) code.setTime(timeToExp);
                 repository.save(code);
