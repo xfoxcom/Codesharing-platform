@@ -1,4 +1,4 @@
-package platform;
+package platform.entity;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
@@ -16,7 +16,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @Entity
 public class Code {
-    private static final String DATE_FORMATTER= "yyyy-MM-dd HH:mm:ss";
+    private static final String DATE_FORMATTER = "yyyy-MM-dd HH:mm:ss";
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Id
     private String id;
@@ -45,7 +45,6 @@ public class Code {
         UUID uuid = UUID.randomUUID();
         this.id = uuid.toString();
     }
-
 
     public boolean isExpired() {
         if (isSecret) {
