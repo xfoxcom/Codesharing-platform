@@ -13,7 +13,6 @@ import java.util.UUID;
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
 @Entity
 public class Code {
     private static final String DATE_FORMATTER = "yyyy-MM-dd HH:mm:ss";

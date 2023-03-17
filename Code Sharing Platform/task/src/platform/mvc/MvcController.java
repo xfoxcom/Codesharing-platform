@@ -7,6 +7,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.server.ResponseStatusException;
 import platform.entity.Code;
 import platform.repository.CodeRepository;
@@ -19,11 +20,12 @@ import java.util.stream.Collectors;
 
 @Controller
 @RequiredArgsConstructor
+@RequestMapping("/code")
 public class MvcController {
 
     private final CodeRepository repository;
 
-    @GetMapping(value = "/code/{N}", produces = MediaType.TEXT_HTML_VALUE)
+    @GetMapping(value = "/{N}", produces = MediaType.TEXT_HTML_VALUE)
     public String getCode(HttpServletResponse response, @PathVariable String N, Model model) {
 
         Code code = repository.findById(N).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
@@ -59,12 +61,12 @@ public class MvcController {
         return "getSnippetWithoutRestrict";
     }
 
-    @GetMapping("/code/new")
+    @GetMapping("/new")
     public String createCode() {
         return "create";
     }
 
-    @GetMapping("/code/latest")
+    @GetMapping("/latest")
     public String getLatestHTML(Model model) {
 
         List<Code> codes = repository.findAll()

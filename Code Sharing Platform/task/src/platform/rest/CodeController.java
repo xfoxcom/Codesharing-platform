@@ -45,8 +45,8 @@ public class CodeController {
     @GetMapping("/latest")
     public List<Code> getLatest() {
         return repository.findAll()
-                .stream().
-                filter(c -> !c.isSecret())
+                .stream()
+                .filter(c -> !c.isSecret())
                 .sorted(Comparator.comparing(Code::getDate).reversed())
                 .limit(10)
                 .collect(Collectors.toList());
